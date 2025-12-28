@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NPTEL Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+
+  <!-- Upload Section -->
+  <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-xl">
+    <h1 class="text-2xl font-semibold mb-4">NPTEL Course Assistant</h1>
+
+    <label class="block mb-2 font-medium">Course Name</label>
+    <input id="course-name" type="text"
+      class="w-full border px-3 py-2 rounded mb-4"
+      placeholder="e.g. Machine Learning" />
+
+    <label class="block mb-2 font-medium">Upload PDF</label>
+    <input id="file-input" type="file" accept=".pdf"
+      class="w-full border px-3 py-2 rounded mb-4" />
+
+    <button id="upload-btn"
+      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+      Upload & Ingest
+    </button>
+
+    <p id="upload-status" class="mt-3 text-sm"></p>
+  </div>
+
+  <!-- Chat Button -->
+  <button id="open-chat"
+    class="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg">
+    Chat
+  </button>
+
+  <!-- Chat Window -->
+  <div id="chat-container"
+    class="hidden fixed bottom-20 right-4 w-96 bg-white shadow-lg rounded-lg flex flex-col">
+
+    <div class="bg-blue-500 text-white p-3 flex justify-between rounded-t-lg">
+      <span>Course Assistant</span>
+      <button id="close-chat">✕</button>
+    </div>
+
+    <div id="chatbox" class="p-3 h-80 overflow-y-auto space-y-2"></div>
+
+    <div class="flex border-t">
+      <input id="chat-input"
+        class="flex-1 px-3 py-2 outline-none"
+        placeholder="Ask a question..." />
+      <button id="send-btn"
+        class="bg-blue-500 text-white px-4">
+        Send
+      </button>
+    </div>
+  </div>
+
+<script>
+const API_BASE = "http://localhost:8000";
+
+const chatContainer = document.getElementById("chat-container");
+const chatbox = document.getElementById("chatbox");
+const chatInput = document.getElementById("chat-input");
+
+document.getElementById("open-chat").onclick = () =>
+  chatContainer.classList.remove("hidden");
+
+document.getElementById("close-chat").onclick = () =>
+  chatContainer.classList.add("hidden");
+
+
+// ---------------- UPLOAD ----------------
+document.getElementById("upload-btn").onclick = async () => {
+  const file = document.getElementById("file-input").files[0];
+  const course = document.getElementById("course-name").value;
+  const status = document.getElementById("upload-status");
+
+  if (!file || !course) {
+    status.textContent = "Please provide course name and PDF";
+    status.className = "text-red-500";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("course_name", course);
+
+  status.textContent = "Uploading...";
+  status.className = "text-gray-500";
+
+  try {
+    const res = await fetch(`${API_BASE}/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    status.textContent = "Upload successful. Ingestion started.";
+    status.className = "text-green-600";
+  } catch {
+    status.textContent = "Upload failed";
+    status.className = "text-red-500";
+  }
+};
+
+
+// ---------------- CHAT ----------------
+function addMessage(text, isUser) {
+  const div = document.createElement("div");
+  div.className = isUser ? "text-right" : "text-left";
+  div.innerHTML = `
+    <span class="inline-block px-3 py-2 rounded
+      ${isUser ? "bg-blue-500 text-white" : "bg-gray-200"}">
+      ${text}
+    </span>`;
+  chatbox.appendChild(div);
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+async function sendMessage() {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+
+  addMessage(msg, true);
+  chatInput.value = "";
+
+  try {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: msg })
+    });
+
+    const data = await res.json();
+    addMessage(data.answer, false);
+  } catch {
+    addMessage("Server error", false);
+  }
+}
+
+document.getElementById("send-btn").onclick = sendMessage;
+chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
+</script>
+
+</body>
+</html>

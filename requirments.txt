@@ -1,0 +1,36 @@
+#python
+python-multipart
+
+# API
+fastapi
+uvicorn[standard]
+pydantic
+
+# Env & config
+python-dotenv
+
+# Supabase
+supabase
+
+# PDF loading
+pdfplumber
+
+# Chunking
+langchain
+langchain-text-splitters
+langchain-community
+
+# Embeddings
+sentence-transformers
+torch
+
+# Database + vectors
+sqlalchemy
+psycopg2-binary
+pgvector
+
+# HTTP utilities
+requests
+
+#LLM
+google-generativeai
