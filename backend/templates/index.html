@@ -1,130 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <title>NPTEL Assistant</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8" />
+<title>NPTEL Assistant</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+/* ---------- GLOBAL ---------- */
+html { scroll-behavior: smooth; }
+#chatbox { scroll-behavior: smooth; }
+
+/* ---------- GLASS ---------- */
+.glass {
+  background: rgba(8, 15, 30, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- GLOW ---------- */
+.glow {
+  box-shadow:
+    0 0 25px rgba(99,102,241,0.35),
+    0 0 80px rgba(34,211,238,0.12);
+}
+
+/* ---------- SCROLLBAR ---------- */
+#chatbox::-webkit-scrollbar { width: 6px; }
+#chatbox::-webkit-scrollbar-thumb {
+  background: linear-gradient(#6366f1, #22d3ee);
+  border-radius: 10px;
+}
+
+/* ---------- FLOAT PULSE ---------- */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(99,102,241,.5); }
+  70% { box-shadow: 0 0 0 30px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+.pulse { animation: pulse 2.8s infinite; }
+
+/* ---------- TYPING LOADER ---------- */
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
+}
+.typing span {
+  animation: blink 1.4s infinite both;
+  font-size: 0.8rem;
+}
+.typing span:nth-child(2){ animation-delay: .2s; }
+.typing span:nth-child(3){ animation-delay: .4s; }
+</style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+<body class="bg-gradient-to-br from-black via-slate-900 to-black text-gray-100 min-h-screen px-6 py-12">
 
-  <!-- Upload Section -->
-  <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-xl">
-    <h1 class="text-2xl font-semibold mb-4">NPTEL Course Assistant</h1>
+<!-- ================= UPLOAD ================= -->
+<div class="max-w-3xl mx-auto glass glow rounded-3xl p-10 space-y-6">
+  <h1 class="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+    NPTEL Assistant
+  </h1>
 
-    <label class="block mb-2 font-medium">Course Name</label>
-    <input id="course-name" type="text"
-      class="w-full border px-3 py-2 rounded mb-4"
-      placeholder="e.g. Machine Learning" />
+  <p class="text-gray-400">Upload course PDFs and ask anything.</p>
 
-    <label class="block mb-2 font-medium">Upload PDF</label>
-    <input id="file-input" type="file" accept=".pdf"
-      class="w-full border px-3 py-2 rounded mb-4" />
+  <input id="course-name"
+    class="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+    placeholder="Course name (e.g. Deep Learning)" />
 
-    <button id="upload-btn"
-      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-      Upload & Ingest
+  <!-- FILE UPLOAD ZONE -->
+<label
+  for="file-input"
+  id="file-dropzone"
+  class="group relative flex flex-col items-center justify-center gap-3
+         w-full h-40 rounded-2xl cursor-pointer
+         border border-dashed border-white/15
+         bg-black/40
+         transition-all duration-300
+         hover:border-cyan-400/60
+         hover:shadow-[0_0_40px_rgba(34,211,238,0.25)]
+         hover:scale-[1.01]">
+
+  <!-- glow layer -->
+  <div class="absolute inset-0 rounded-2xl
+              bg-gradient-to-r from-indigo-500/20 to-cyan-500/20
+              opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+
+  <!-- content -->
+  <div class="relative flex flex-col items-center gap-2 text-center">
+    <div class="text-4xl">📄</div>
+    <p class="font-semibold text-gray-200">
+      Click to upload PDF
+    </p>
+    <p class="text-sm text-gray-400">
+      or drag & drop here
+    </p>
+    <p id="file-name" class="text-xs text-cyan-400 hidden"></p>
+  </div>
+
+  <input id="file-input" type="file" accept=".pdf" class="hidden" />
+</label>
+
+
+  <button id="upload-btn"
+  class="group relative w-full overflow-hidden rounded-2xl border border-white/10
+         bg-gradient-to-r from-indigo-500/90 to-cyan-500/90
+         px-6 py-4 font-extrabold tracking-wide text-black
+         transition-all duration-300
+         hover:scale-[1.03] hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]
+         active:scale-[0.98]">
+
+  <!-- animated glow layer -->
+  <span class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-cyan-400
+               opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></span>
+
+  <!-- content -->
+  <span class="relative flex items-center justify-center gap-3">
+    <span class="text-xl">📄</span>
+    <span>Upload  </span>
+    <span class="text-xl">🧠</span>
+  </span>
+</button>
+
+
+  <p id="upload-status" class="text-sm text-gray-400"></p>
+</div>
+
+<!-- ================= CHAT TOGGLE ================= -->
+<button id="chat-toggle"
+  class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 text-black text-3xl flex items-center justify-center pulse glow hover:scale-110 transition-transform">
+  💬
+</button>
+
+<!-- ================= CHAT WINDOW ================= -->
+<div id="chat-container"
+  class="hidden fixed bottom-28 right-8 w-[520px] h-[680px] glass glow rounded-3xl flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+    <span class="font-bold tracking-wide text-indigo-400">Course Assistant</span>
+    <button id="close-chat" class="text-gray-400 hover:text-white text-xl">✕</button>
+  </div>
+
+  <!-- Messages -->
+  <div id="chatbox" class="flex-1 p-5 space-y-4 overflow-y-auto"></div>
+
+  <!-- Input -->
+  <div class="p-4 border-t border-white/10 flex gap-3">
+    <input id="chat-input"
+      class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+      placeholder="Ask a question…" />
+    <button id="send-btn"
+      class="px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 font-bold">
+      Send
     </button>
-
-    <p id="upload-status" class="mt-3 text-sm"></p>
   </div>
-
-  <!-- Chat Button -->
-  <button id="open-chat"
-    class="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg">
-    Chat
-  </button>
-
-  <!-- Chat Window -->
-  <div id="chat-container"
-    class="hidden fixed bottom-20 right-4 w-96 bg-white shadow-lg rounded-lg flex flex-col">
-
-    <div class="bg-blue-500 text-white p-3 flex justify-between rounded-t-lg">
-      <span>Course Assistant</span>
-      <button id="close-chat">✕</button>
-    </div>
-
-    <div id="chatbox" class="p-3 h-80 overflow-y-auto space-y-2"></div>
-
-    <div class="flex border-t">
-      <input id="chat-input"
-        class="flex-1 px-3 py-2 outline-none"
-        placeholder="Ask a question..." />
-      <button id="send-btn"
-        class="bg-blue-500 text-white px-4">
-        Send
-      </button>
-    </div>
-  </div>
+</div>
 
 <script>
-const API_BASE = "http://localhost:8000";
-
+const API_BASE = window.location.origin;
+const chatToggle = document.getElementById("chat-toggle");
 const chatContainer = document.getElementById("chat-container");
 const chatbox = document.getElementById("chatbox");
 const chatInput = document.getElementById("chat-input");
 
-document.getElementById("open-chat").onclick = () =>
-  chatContainer.classList.remove("hidden");
+let autoScroll = true;
+let typingIndicator = null;
 
-document.getElementById("close-chat").onclick = () =>
-  chatContainer.classList.add("hidden");
+/* ---------- TOGGLE ---------- */
+chatToggle.onclick = () => chatContainer.classList.toggle("hidden");
+document.getElementById("close-chat").onclick = () => chatContainer.classList.add("hidden");
 
-
-// ---------------- UPLOAD ----------------
-document.getElementById("upload-btn").onclick = async () => {
-  const file = document.getElementById("file-input").files[0];
-  const course = document.getElementById("course-name").value;
-  const status = document.getElementById("upload-status");
-
-  if (!file || !course) {
-    status.textContent = "Please provide course name and PDF";
-    status.className = "text-red-500";
-    return;
+/* ---------- SCROLL ---------- */
+chatbox.addEventListener("scroll", () => {
+  autoScroll =
+    chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight < 80;
+});
+function smoothScroll() {
+  if (autoScroll) {
+    chatbox.scrollTo({ top: chatbox.scrollHeight, behavior: "smooth" });
   }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("course_name", course);
-
-  status.textContent = "Uploading...";
-  status.className = "text-gray-500";
-
-  try {
-    const res = await fetch(`${API_BASE}/upload`, {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-    status.textContent = "Upload successful. Ingestion started.";
-    status.className = "text-green-600";
-  } catch {
-    status.textContent = "Upload failed";
-    status.className = "text-red-500";
-  }
-};
-
-
-// ---------------- CHAT ----------------
-function addMessage(text, isUser) {
-  const div = document.createElement("div");
-  div.className = isUser ? "text-right" : "text-left";
-  div.innerHTML = `
-    <span class="inline-block px-3 py-2 rounded
-      ${isUser ? "bg-blue-500 text-white" : "bg-gray-200"}">
-      ${text}
-    </span>`;
-  chatbox.appendChild(div);
-  chatbox.scrollTop = chatbox.scrollHeight;
 }
 
+/* ---------- MESSAGES ---------- */
+function addMessage(text, isUser) {
+  const wrap = document.createElement("div");
+  wrap.className = isUser ? "flex justify-end" : "flex justify-start";
+  wrap.innerHTML = `
+    <div class="max-w-[80%] px-4 py-3 rounded-2xl text-sm
+      ${isUser
+        ? "bg-gradient-to-r from-indigo-500 to-cyan-500 text-black"
+        : "bg-white/10 text-gray-200"}">
+      ${text}
+    </div>`;
+  chatbox.appendChild(wrap);
+  requestAnimationFrame(smoothScroll);
+}
+
+/* ---------- TYPING ---------- */
+function showTyping() {
+  typingIndicator = document.createElement("div");
+  typingIndicator.className = "flex justify-start";
+  typingIndicator.innerHTML = `
+    <div class="px-4 py-3 rounded-2xl bg-white/10 typing">
+      <span>●</span><span>●</span><span>●</span>
+    </div>`;
+  chatbox.appendChild(typingIndicator);
+  requestAnimationFrame(smoothScroll);
+}
+function removeTyping() {
+  if (typingIndicator) typingIndicator.remove();
+}
+
+/* ---------- CHAT ---------- */
 async function sendMessage() {
   const msg = chatInput.value.trim();
   if (!msg) return;
 
   addMessage(msg, true);
   chatInput.value = "";
+  showTyping();
 
   try {
     const res = await fetch(`${API_BASE}/chat`, {
@@ -132,17 +228,102 @@ async function sendMessage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query: msg })
     });
-
     const data = await res.json();
+    removeTyping();
     addMessage(data.answer, false);
   } catch {
-    addMessage("Server error", false);
+    removeTyping();
+    addMessage("⚠️ Something went wrong.", false);
   }
 }
 
 document.getElementById("send-btn").onclick = sendMessage;
-chatInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
+chatInput.addEventListener("keydown", e => e.key === "Enter" && sendMessage());
+
+/* ---------- UPLOAD ---------- */
+const uploadBtn = document.getElementById("upload-btn");
+
+uploadBtn.onclick = async () => {
+  const file = document.getElementById("file-input").files[0];
+  const course = document.getElementById("course-name").value.trim();
+  const status = document.getElementById("upload-status");
+
+  if (!file) {
+    status.textContent = "Please select a PDF file first.";
+    return;
+  }
+
+  const isPdf =
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  if (!isPdf) {
+    status.textContent = "Only PDF files are supported.";
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append("file", file);
+  if (course) {
+    fd.append("course_name", course);
+  }
+
+  uploadBtn.disabled = true;
+  uploadBtn.classList.add("opacity-70", "cursor-not-allowed");
+  status.textContent = "Uploading and starting ingestion...";
+
+  try {
+    const res = await fetch(`${API_BASE}/upload`, { method: "POST", body: fd });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const errorMsg = data.detail || data.message || "Upload failed.";
+      status.textContent = `Upload failed: ${errorMsg}`;
+      return;
+    }
+
+    status.textContent = data.message || "File uploaded. Ingestion started.";
+  } catch {
+    status.textContent = "Network error while uploading. Please try again.";
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.classList.remove("opacity-70", "cursor-not-allowed");
+  }
+};
+
+const fileInput = document.getElementById("file-input");
+const fileName = document.getElementById("file-name");
+const dropzone = document.getElementById("file-dropzone");
+
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length > 0) {
+    fileName.textContent = fileInput.files[0].name;
+    fileName.classList.remove("hidden");
+  }
+});
+
+/* Optional drag feedback */
+["dragenter", "dragover"].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.add("border-cyan-400/80");
+  })
+);
+
+["dragleave", "drop"].forEach(evt =>
+  dropzone.addEventListener(evt, e => {
+    e.preventDefault();
+    dropzone.classList.remove("border-cyan-400/80");
+  })
+);
+
+dropzone.addEventListener("drop", e => {
+  const droppedFiles = e.dataTransfer?.files;
+  if (!droppedFiles || droppedFiles.length === 0) return;
+
+  const dt = new DataTransfer();
+  dt.items.add(droppedFiles[0]);
+  fileInput.files = dt.files;
+  fileName.textContent = droppedFiles[0].name;
+  fileName.classList.remove("hidden");
 });
 </script>
 
